@@ -49,17 +49,21 @@ def main(lastpassFile):
 			scrubbedSites += [match]
 		except:	pass
 
+	affectedSites = set()
+
+	for j in open(AFFECTED_TXT):
+		affectedSites.add(j[:-1])
+
+	affectedSites = frozenset(affectedSites)
+
 	#compare scrubbed list of lastpass sites with affected sites
 	failed = open('failed.txt', 'w')
 	for i in scrubbedSites:
 		status = 'clear'
-		for j in open(AFFECTED_TXT):
-			j = j[:-1]
-			#print("'{0}'".format(i))
-			if i == j :
-				status = 'AFFECTED'
-				failed.write(i+'\n')
-				break
+
+		if i in affectedSites:
+			status = 'AFFECTED'
+			failed.write(i + '\n')
 		print("{0} : {1}".format(i, status))
 
 	failed.close()
