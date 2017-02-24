@@ -19,9 +19,27 @@ import zipfile
 AFFECTED = 'https://github.com/pirate/sites-using-cloudflare/archive/master.zip'
 AFFECTED_ZIP = 'sorted_unique.zip'
 AFFECTED_TXT = 'sites-using-cloudflare-master' + os.sep + 'sorted_unique_cf.txt'
-REGEX = 'https?:\/\/(?:\w*\.)?([a-z0-9\-]+\.[a-z\.]+)(?:[\/]?).*'
+REGEX = '(?:https?:\/\/)?(?:\w*\.)?([a-z0-9\-]+\.[a-z\.]+)(?:[\/]?).*'
 
 def main(lastpassFile):
+	#parse lastpass dump
+	print("Parsing your sites....")
+	sites = open(lastpassFile, newline='')
+	parser = csv.reader(sites, delimiter=',')
+	scrubbedSites = []
+	for row in parser:
+		raw = str(row[0])
+		# print("'" + raw + "'")
+		matches = re.search(REGEX, raw)
+		try:
+			match = matches.group(1)
+			scrubbedSites += [match]
+		except:	pass
+
+	if len(scrubbedSites) == 0:
+		print("Huh, you don't have any sites in your csv file. Maybe you have them formatted incorrectly.")
+		return
+
 	#Download list of all known affected sites thus far
 	print("Downloading affected sites list....")
 	httpData = urllib.request.urlopen(AFFECTED)
@@ -35,20 +53,7 @@ def main(lastpassFile):
 		someZip.extractall()
 	print("Unzipped\n")
 
-	#parse lastpass dump
-	print("Parsing....")
-	sites = open(lastpassFile, newline='')
-	parser = csv.reader(sites, delimiter=',')
-	scrubbedSites = []
-	for row in parser:
-		raw = str(row[0])
-		#print(raw)
-		matches = re.search(REGEX, raw)
-		try:
-			match = matches.group(1)
-			scrubbedSites += [match]
-		except:	pass
-
+	print("Testing...")
 	affectedSites = set()
 
 	for j in open(AFFECTED_TXT):
@@ -67,8 +72,7 @@ def main(lastpassFile):
 		print("{0} : {1}".format(i, status))
 
 	failed.close()
-	try: input('\nDONE. Failed sites written to failed.txt\n')
-	except: pass
+	print("DONE. Failed sites written to failed.txt")
 
 if __name__ == '__main__':
 	if(len(sys.argv) != 2):
